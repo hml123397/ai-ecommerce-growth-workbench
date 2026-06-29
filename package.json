@@ -1,0 +1,12 @@
+{
+  "name": "ai-ecommerce-growth-workbench",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "start:public": "npx --yes localtunnel --port 8787 --local-host 127.0.0.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
