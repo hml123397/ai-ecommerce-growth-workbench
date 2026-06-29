@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: ai-ecommerce-growth-workbench
+    env: node
+    plan: free
+    buildCommand: ""
+    startCommand: npm start
+    autoDeploy: false
+    envVars:
+      - key: DOUBAO_API_KEY
+        sync: false
+      - key: DOUBAO_MODEL
+        value: doubao-seed-2-0-mini-260215
+      - key: DOUBAO_BASE_URL
+        value: https://ark.cn-beijing.volces.com/api/v3/chat/completions
+      - key: PORT
+        value: 10000
