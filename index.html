@@ -70,6 +70,14 @@
           <div class="form-grid">
             <label>目标人群<input name="audience" required placeholder="例：家庭囤货、上班族早餐、节日送礼" /></label>
             <label>价格信息<input name="price" required placeholder="例：59.9 元 8 根装" /></label>
+            <label>
+              视频时间
+              <select name="videoDuration">
+                <option value="30">30s</option>
+                <option value="45" selected>45s</option>
+                <option value="60">60s</option>
+              </select>
+            </label>
           </div>
 
           <label>商品核心卖点<textarea name="sellingPoints" required rows="3" placeholder="例：产地直发、真空包装、甜糯口感、开袋即食"></textarea></label>
@@ -136,12 +144,9 @@
             <label>完播率 %<input name="completionRate" type="number" min="0" max="100" step="0.1" required placeholder="18" /></label>
             <label>点赞数<input name="likes" type="number" min="0" required placeholder="95" /></label>
             <label>评论数<input name="comments" type="number" min="0" required placeholder="12" /></label>
-            <label>商品点击<input name="productClicks" type="number" min="0" required placeholder="73" /></label>
-            <label>成交单数<input name="orders" type="number" min="0" required placeholder="5" /></label>
-            <label>成交金额<input name="revenue" type="number" min="0" step="0.01" required placeholder="498" /></label>
-            <label>直播在线峰值<input name="livePeak" type="number" min="0" placeholder="可选" /></label>
           </div>
 
+          <label>上传视频<input name="videoFile" type="file" accept="video/*" /></label>
           <label>现场观察<textarea name="notes" rows="3" placeholder="例：评论区多人问价格和发货；开头播放还可以，但进店点击少。"></textarea></label>
 
           <div class="action-row">
