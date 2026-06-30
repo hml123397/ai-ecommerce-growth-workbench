@@ -23,6 +23,7 @@ const shopSample = {
   category: "农产品",
   platform: "抖音",
   topicType: "痛点型",
+  videoDuration: "45",
   audience: "家庭囤货、上班族早餐、老人孩子、节日送礼人群",
   price: "59.9 元 8 根装",
   sellingPoints: "东北产地直发，甜糯口感，真空独立包装，开袋即食，低温锁鲜，早餐和夜宵都方便",
@@ -40,18 +41,14 @@ const reviewSample = {
   completionRate: 18,
   likes: 95,
   comments: 12,
-  productClicks: 73,
-  orders: 5,
-  revenue: 498,
-  livePeak: 0,
-  notes: "开头播放还可以，但商品点击少。评论区有人问甜不甜、怎么发货、有没有优惠。"
+  notes: "开头播放还可以，但评论区有人问甜不甜、怎么发货、有没有优惠。"
 };
 
 const benchmarks = {
-  抖音: { completion: 30, interaction: 4, click: 3, order: 12 },
-  快手: { completion: 28, interaction: 3.5, click: 2.8, order: 10 },
-  小红书: { completion: 35, interaction: 5, click: 2.2, order: 8 },
-  视频号: { completion: 32, interaction: 3, click: 2.4, order: 9 }
+  抖音: { completion: 30, interaction: 4 },
+  快手: { completion: 28, interaction: 3.5 },
+  小红书: { completion: 35, interaction: 5 },
+  视频号: { completion: 32, interaction: 3 }
 };
 
 const platformProfiles = {
@@ -96,7 +93,7 @@ function formData(form) {
 
 function fillForm(form, data) {
   Object.entries(data).forEach(([key, value]) => {
-    if (form.elements[key]) form.elements[key].value = value;
+    if (form.elements[key] && form.elements[key].type !== "file") form.elements[key].value = value;
   });
 }
 
@@ -122,8 +119,34 @@ function buildShopPlan(input) {
   const secondPoint = points[1] || "使用方便";
   const thirdPoint = points[2] || "适合日常复购";
   const mainConcern = concerns[0] || "用户顾虑";
+  const hookConcern = mainConcern.replace(/^担心/, "");
   const mainAudience = audience[0] || "目标用户";
-  const hook = `担心${mainConcern}？这款${input.productName}先看这 3 个真实细节。`;
+  const hook = `担心${hookConcern}？这款${input.productName}先看这 3 个真实细节。`;
+  const duration = Number(input.videoDuration || 45);
+  const videoScripts = {
+    30: [
+      `0-3 秒：${hook}`,
+      `4-8 秒：展示${mainConcern}对应的真实场景。`,
+      `9-18 秒：用细节镜头证明${mainPoint}和${secondPoint}。`,
+      `19-25 秒：说清${input.price}和${input.promotion || "当前活动"}。`,
+      `26-30 秒：提醒用户${profile.action}，并抛出一个具体评论问题。`
+    ],
+    45: [
+      `0-3 秒：${hook}`,
+      `4-10 秒：展示${mainConcern}对应的真实场景。`,
+      `11-25 秒：用细节镜头证明${mainPoint}、${secondPoint}、${thirdPoint}。`,
+      `26-35 秒：说清${input.price}和${input.promotion || "当前活动"}。`,
+      `36-45 秒：提醒用户${profile.action}，并抛出一个具体评论问题。`
+    ],
+    60: [
+      `0-3 秒：${hook}`,
+      `4-12 秒：展示${mainConcern}对应的真实场景，并给出对比反差。`,
+      `13-32 秒：用细节镜头证明${mainPoint}、${secondPoint}、${thirdPoint}。`,
+      `33-45 秒：补充适合${mainAudience}的使用场景和购买理由。`,
+      `46-55 秒：说清${input.price}和${input.promotion || "当前活动"}。`,
+      `56-60 秒：提醒用户${profile.action}，并抛出一个具体评论问题。`
+    ]
+  };
 
   return {
     titles: [
@@ -147,13 +170,7 @@ function buildShopPlan(input) {
       `问：现在有什么优惠？答：${input.promotion || input.price}，下单前可以确认活动和库存。`,
       "问：收到后有问题怎么办？答：先安抚，再引导提供订单号和问题照片，按店铺售后规则处理。"
     ],
-    video: [
-      `0-3 秒：${hook}`,
-      `4-10 秒：展示${mainConcern}对应的真实场景。`,
-      `11-25 秒：用细节镜头证明${mainPoint}、${secondPoint}、${thirdPoint}。`,
-      `26-35 秒：说清${input.price}和${input.promotion || "当前活动"}。`,
-      `结尾：提醒用户${profile.action}，并抛出一个具体评论问题。`
-    ],
+    video: videoScripts[duration] || videoScripts[45],
     summary: `${input.platform}建议${profile.tone}；${profile.focus}`,
     hook
   };
@@ -162,10 +179,7 @@ function buildShopPlan(input) {
 function buildMetrics(input) {
   return {
     interactionRate: input.views ? ((input.likes + input.comments) / input.views) * 100 : 0,
-    clickRate: input.views ? (input.productClicks / input.views) * 100 : 0,
-    orderRate: input.productClicks ? (input.orders / input.productClicks) * 100 : 0,
-    finalConversion: input.views ? (input.orders / input.views) * 100 : 0,
-    avgOrderValue: input.orders ? input.revenue / input.orders : 0
+    materialRate: input.videoUploaded ? 100 : 0
   };
 }
 
@@ -196,27 +210,26 @@ function buildReview(input) {
       actions: ["结尾只问一个具体问题。", "把评论区高频问题做成下一条视频开头。", "发布后置顶答疑评论。"]
     },
     {
-      key: "商品点击",
-      value: metrics.clickRate,
-      target: target.click,
-      status: statusOf(metrics.clickRate, target.click, target.click * 0.5),
-      cause: metrics.clickRate < 1 ? "价格、优惠、规格、购买入口露出不清楚。" : "购买理由和适用人群还不够明确。",
-      actions: ["中段展示价格、规格、优惠和适用场景。", "一句话讲清谁最适合买。", "画面同步出现商品入口提示。"]
+      key: "卖点承接",
+      value: Math.min((input.completionRate + metrics.interactionRate * 4) / 2, 100),
+      target: 45,
+      status: statusOf(Math.min((input.completionRate + metrics.interactionRate * 4) / 2, 100), 45, 25),
+      cause: "视频里能被用户记住的购买理由还需要更集中，评论问题也要反哺详情页和客服话术。",
+      actions: ["中段集中展示价格、规格、优惠和适用场景。", "一句话讲清谁最适合买。", "把评论区高频问题补进详情页首屏和客服快捷回复。"]
     },
     {
-      key: "成交转化",
-      value: metrics.orderRate,
-      target: target.order,
-      status: statusOf(metrics.orderRate, target.order, target.order * 0.5),
-      cause: input.productClicks > 0 && input.orders === 0 ? "详情页首屏、发货、售后或客服答疑存在明显顾虑。" : "卖点排序、活动表达或客服话术没有完全消除顾虑。",
-      actions: ["详情页首屏放核心卖点、规格、发货、售后和优惠说明。", "评论区问题整理成客服快捷回复。", "直播间强化价格机制、库存限制和售后安心感。"]
+      key: "视频复盘",
+      value: metrics.materialRate,
+      target: 100,
+      status: input.videoUploaded ? "good" : "warn",
+      cause: input.videoUploaded ? `已上传「${input.videoName}」，可以结合画面节奏做更细复盘。` : "还没有上传原视频，只能根据数据和文字观察做基础诊断。",
+      actions: ["上传原视频后重点检查前 3 秒、卖点出现时间和结尾引导。", "记录哪一秒出现跳出或评论疑问。", "把有效镜头整理成下一条视频的开头素材。"]
     }
   ];
   const score = Math.round(
-    Math.min(input.completionRate / 35, 1) * 28 +
-      Math.min(metrics.interactionRate / 5, 1) * 22 +
-      Math.min(metrics.clickRate / 4, 1) * 26 +
-      Math.min(metrics.orderRate / 15, 1) * 24
+    Math.min(input.completionRate / 35, 1) * 45 +
+      Math.min(metrics.interactionRate / 5, 1) * 35 +
+      (input.videoUploaded ? 20 : 10)
   );
   const weakest = diagnosis.find((item) => item.status === "bad") || diagnosis.find((item) => item.status === "warn") || diagnosis[0];
   return {
@@ -229,7 +242,8 @@ function buildReview(input) {
       "0-3 秒直接展示痛点或对比结果，字幕不超过 14 个字。",
       "11-25 秒用场景、测评或用户疑问证明卖点。",
       "结尾引导进店、进直播间或评论提问。",
-      "详情页首屏同步补齐卖点、规格、优惠、发货和售后。"
+      "详情页首屏同步补齐卖点、规格、优惠、发货和售后。",
+      input.videoUploaded ? `复盘上传视频「${input.videoName}」的前 5 秒节奏。` : "补充上传原视频后再做画面级复盘。"
     ]
   };
 }
@@ -251,11 +265,10 @@ function renderReview() {
   const { input, review } = reviewState;
   const metricCards = [
     ["增长评分", review.score, review.verdict],
+    ["播放量", fmt.num(input.views), "曝光基础"],
     ["完播率", fmt.pct(input.completionRate), "内容留存"],
     ["互动率", fmt.pct(review.metrics.interactionRate), "点赞+评论"],
-    ["商品点击率", fmt.pct(review.metrics.clickRate), "进店动机"],
-    ["点击后成交率", fmt.pct(review.metrics.orderRate), "店铺承接"],
-    ["成交金额", fmt.money(input.revenue), "经营结果"]
+    ["上传视频", input.videoUploaded ? "已上传" : "未上传", input.videoUploaded ? input.videoName : "可补充原视频"]
   ];
   reviewOutput.innerHTML = `
     <div class="metric-cards">${metricCards
@@ -308,16 +321,14 @@ ${plan.video.map((item) => `- ${item}`).join("\n")}
 播放量：${fmt.num(reviewInput.views)}
 完播率：${fmt.pct(reviewInput.completionRate)}
 互动率：${fmt.pct(review.metrics.interactionRate)}
-商品点击率：${fmt.pct(review.metrics.clickRate)}
-点击后成交率：${fmt.pct(review.metrics.orderRate)}
-成交金额：${fmt.money(reviewInput.revenue)}
+上传视频：${reviewInput.videoUploaded ? reviewInput.videoName : "未上传"}
 
 诊断：
 ${review.diagnosis.map((item) => `- ${item.key}：当前 ${fmt.pct(item.value)}，参考线 ${fmt.pct(item.target)}；${item.cause}`).join("\n")}
 
 五、合并后的下一轮动作
 ${review.next.map((item) => `- ${item}`).join("\n")}
-- 用 1 号模块生成的标题、客服和详情页素材，补齐 4 号诊断发现的商品点击和成交承接问题。
+- 用 1 号模块生成的标题、客服和详情页素材，补齐 4 号诊断发现的留存、互动和卖点承接问题。
 - 下一条内容只优先改一个最弱环节，避免同时改太多导致无法判断效果。`;
 }
 
@@ -355,16 +366,16 @@ shopForm.addEventListener("submit", (event) => {
 reviewForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const raw = formData(reviewForm);
+  const videoFile = reviewForm.elements.videoFile?.files?.[0];
+  delete raw.videoFile;
   const input = {
     ...raw,
     views: Number(raw.views || 0),
     completionRate: Number(raw.completionRate || 0),
     likes: Number(raw.likes || 0),
     comments: Number(raw.comments || 0),
-    productClicks: Number(raw.productClicks || 0),
-    orders: Number(raw.orders || 0),
-    revenue: Number(raw.revenue || 0),
-    livePeak: Number(raw.livePeak || 0),
+    videoUploaded: Boolean(videoFile),
+    videoName: videoFile?.name || "未上传",
     notes: raw.notes || "暂无额外观察。"
   };
   const review = buildReview(input);
